@@ -9,6 +9,10 @@ description = "Local Obsidian harness for career management"
 requires-python = ">=3.11"
 dependencies = [
   "PyYAML>=6.0",
+  "openpyxl>=3.1",
+  "pypdf>=5.0",
+  "python-docx>=1.1",
+  "python-pptx>=1.0",
 ]
 
 [project.scripts]

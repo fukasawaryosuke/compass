@@ -11,7 +11,17 @@ import shutil
 import yaml
 
 
-SUPPORTED_EXTENSIONS = {".html", ".htm", ".markdown", ".md", ".txt"}
+SUPPORTED_EXTENSIONS = {
+    ".docx",
+    ".html",
+    ".htm",
+    ".markdown",
+    ".md",
+    ".pdf",
+    ".pptx",
+    ".txt",
+    ".xlsx",
+}
 
 
 class IngestionError(ValueError):
@@ -88,12 +98,82 @@ def _ensure_supported(path: Path) -> None:
 
 
 def _extract(path: Path, content: bytes) -> tuple[str, str]:
+    extension = path.suffix.lower()
+    if extension == ".pdf":
+        return _extract_pdf(path), "pdf"
+    if extension == ".docx":
+        return _extract_docx(path), "docx"
+    if extension == ".pptx":
+        return _extract_pptx(path), "pptx"
+    if extension == ".xlsx":
+        return _extract_xlsx(path), "xlsx"
     text = _decode(content, path)
-    if path.suffix.lower() in {".html", ".htm"}:
+    if extension in {".html", ".htm"}:
         parser = _HTMLTextExtractor()
         parser.feed(text)
         return _normalise_text("".join(parser.parts)), "html"
     return _normalise_text(text), "text"
+
+
+def _extract_pdf(path: Path) -> str:
+    from pypdf import PdfReader
+
+    try:
+        reader = PdfReader(path)
+        return _normalise_text("\n\n".join(page.extract_text() or "" for page in reader.pages))
+    except Exception as error:  # pypdf exposes several format-specific exception types.
+        raise IngestionError(f"Cannot extract PDF text from {path}: {error}") from error
+
+
+def _extract_docx(path: Path) -> str:
+    from docx import Document
+
+    document = Document(path)
+    sections = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
+    for table in document.tables:
+        for row in table.rows:
+            values = [cell.text.strip() for cell in row.cells]
+            if any(values):
+                sections.append(" | ".join(values))
+    return _normalise_text("\n".join(sections))
+
+
+def _extract_pptx(path: Path) -> str:
+    from pptx import Presentation
+
+    presentation = Presentation(path)
+    sections: list[str] = []
+    for index, slide in enumerate(presentation.slides, start=1):
+        values: list[str] = []
+        for shape in slide.shapes:
+            if getattr(shape, "has_text_frame", False):
+                text = shape.text.strip()
+                if text:
+                    values.append(text)
+            if getattr(shape, "has_table", False):
+                for row in shape.table.rows:
+                    row_values = [cell.text.strip() for cell in row.cells]
+                    if any(row_values):
+                        values.append(" | ".join(row_values))
+        if values:
+            sections.append(f"# Slide {index}\n" + "\n".join(values))
+    return _normalise_text("\n\n".join(sections))
+
+
+def _extract_xlsx(path: Path) -> str:
+    from openpyxl import load_workbook
+
+    workbook = load_workbook(path, read_only=True, data_only=True)
+    sections: list[str] = []
+    for sheet in workbook.worksheets:
+        rows: list[str] = []
+        for row in sheet.iter_rows(values_only=True):
+            values = ["" if value is None else str(value) for value in row]
+            if any(values):
+                rows.append(" | ".join(values))
+        if rows:
+            sections.append(f"# Sheet: {sheet.title}\n" + "\n".join(rows))
+    return _normalise_text("\n\n".join(sections))
 
 
 def _decode(content: bytes, path: Path) -> str:
