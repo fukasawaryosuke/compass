@@ -53,8 +53,7 @@ def ingest(source: Path, vault: Path, archive: Path) -> IngestionResult:
     for candidate in candidates:
         content = candidate.read_bytes()
         digest = hashlib.sha256(content).hexdigest()
-        archive_path = originals / f"{digest[:16]}--{candidate.name}"
-        _preserve_original(candidate, archive_path, archive / "incoming")
+        archive_path = _preserve_original(candidate, originals, digest, archive / "incoming")
 
         if digest in existing_hashes:
             skipped.append(candidate)
@@ -78,17 +77,23 @@ def ingest(source: Path, vault: Path, archive: Path) -> IngestionResult:
     return IngestionResult(tuple(created), tuple(skipped))
 
 
-def _preserve_original(candidate: Path, archive_path: Path, incoming_root: Path) -> None:
+def _preserve_original(
+    candidate: Path, originals_root: Path, digest: str, incoming_root: Path
+) -> Path:
     """Move managed incoming files into the archive; copy all other supplied files."""
     from_incoming = candidate.resolve().is_relative_to(incoming_root.resolve())
-    if archive_path.exists():
+    matches = sorted(originals_root.glob(f"{digest[:16]}--*"))
+    if matches:
         if from_incoming:
             candidate.unlink()
-        return
+        return matches[0]
+
+    archive_path = originals_root / f"{digest[:16]}--{candidate.name}"
     if from_incoming:
         shutil.move(candidate, archive_path)
     else:
         shutil.copy2(candidate, archive_path)
+    return archive_path
 
 
 def _source_files(source: Path) -> tuple[Path, ...]:
