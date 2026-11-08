@@ -111,3 +111,16 @@ class IngestionTests(unittest.TestCase):
         self.assertEqual(len(result.created), 1)
         self.assertFalse(source.exists())
         self.assertEqual(len(tuple((self.archive / "originals").iterdir())), 1)
+
+    def test_keeps_one_archived_copy_for_identical_source_content(self) -> None:
+        first = self.root / "resume-one.txt"
+        second = self.root / "resume-two.txt"
+        first.write_text("同じ内容", encoding="utf-8")
+        second.write_text("同じ内容", encoding="utf-8")
+
+        ingest(first, self.vault, self.archive)
+        duplicate = ingest(second, self.vault, self.archive)
+
+        self.assertEqual(duplicate.created, ())
+        self.assertEqual(duplicate.skipped, (second,))
+        self.assertEqual(len(tuple((self.archive / "originals").iterdir())), 1)
