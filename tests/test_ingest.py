@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from compass.ingest import ingest
 from compass.vault import initialise
@@ -52,3 +53,49 @@ class IngestionTests(unittest.TestCase):
         self.assertIn("決済基盤", content)
         self.assertIn("Goで実装", content)
         self.assertNotIn("secret()", content)
+
+    def test_extracts_word_powerpoint_and_excel_content(self) -> None:
+        from docx import Document
+        from openpyxl import Workbook
+        from pptx import Presentation
+
+        word = self.root / "career.docx"
+        document = Document()
+        document.add_paragraph("GoでAPIを設計")
+        document.save(word)
+
+        presentation_path = self.root / "project.pptx"
+        presentation = Presentation()
+        slide = presentation.slides.add_slide(presentation.slide_layouts[5])
+        slide.shapes.add_textbox(0, 0, 1_000_000, 1_000_000).text_frame.text = "決済基盤を刷新"
+        presentation.save(presentation_path)
+
+        spreadsheet = self.root / "metrics.xlsx"
+        workbook = Workbook()
+        workbook.active.title = "Metrics"
+        workbook.active.append(["指標", "改善"])
+        workbook.active.append(["障害", "50%"])
+        workbook.save(spreadsheet)
+
+        result = ingest(self.root, self.vault, self.archive)
+
+        content = "\n".join(note.read_text(encoding="utf-8") for note in result.created)
+        self.assertIn("GoでAPIを設計", content)
+        self.assertIn("決済基盤を刷新", content)
+        self.assertIn("障害 | 50%", content)
+
+    def test_extracts_pdf_text(self) -> None:
+        source = self.root / "resume.pdf"
+        source.write_bytes(b"placeholder")
+
+        class Page:
+            def extract_text(self) -> str:
+                return "PDFから抽出した職務経歴"
+
+        class Reader:
+            pages = [Page()]
+
+        with patch("pypdf.PdfReader", return_value=Reader()):
+            result = ingest(source, self.vault, self.archive)
+
+        self.assertIn("PDFから抽出した職務経歴", result.created[0].read_text(encoding="utf-8"))
