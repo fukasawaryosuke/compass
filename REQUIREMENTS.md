@@ -69,11 +69,13 @@ Obsidian Vault/compass/            # 利用者が日常的に使う情報
 
 ```text
 /Users/fukazawa/Documents/compass-archive/
+├── incoming/
 ├── originals/
 └── exports/
 ```
 
-- 原本は取り込み後も自動削除しない。
+- `incoming/`は資料の投入場所とする。取り込みに成功した資料は`originals/`へ移す。
+- 原本は取り込み後も`originals/`から自動削除しない。
 - PDF／Wordの出力は、応募先・媒体・生成日時ごとに版を残し、上書きしない。
 - Vaultには原本の複製を置かず、整理済みのMarkdownと必要な参照情報だけを置く。
 

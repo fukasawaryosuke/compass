@@ -54,7 +54,7 @@ def initialise(vault: Path, archive: Path, template_root: Path) -> InitResult:
             path.mkdir(parents=True, exist_ok=True)
             created.append(path)
 
-    for relative_path in ("originals", "exports"):
+    for relative_path in ("incoming", "originals", "exports"):
         path = archive / relative_path
         if path.exists():
             skipped.append(path)

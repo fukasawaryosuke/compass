@@ -21,3 +21,19 @@ compass本体はGit管理し、職歴・求人・企業研究・面接対策な�
 | Vault外アーカイブ | 原本資料、生成したPDF／Word、実行時キャッシュ |
 
 詳細な方針、データモデル、セキュリティ要件は要件定義書を参照してください。
+
+## 初期操作
+
+ローカル設定を作成してから、Vaultとアーカイブを初期化します。
+
+```sh
+cp config/compass.example.toml config/local.toml
+# config/local.tomlのパスをこの端末向けに編集
+python -m compass init
+```
+
+資料はアーカイブの`incoming/`へ置き、以下を実行します。取り込み成功後、原本は`originals/`へ移動し、Vaultには抽出ノートだけが作成されます。
+
+```sh
+python -m compass ingest
+```

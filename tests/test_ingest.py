@@ -99,3 +99,15 @@ class IngestionTests(unittest.TestCase):
             result = ingest(source, self.vault, self.archive)
 
         self.assertIn("PDFから抽出した職務経歴", result.created[0].read_text(encoding="utf-8"))
+
+    def test_moves_managed_incoming_file_into_originals(self) -> None:
+        incoming = self.archive / "incoming"
+        incoming.mkdir(exist_ok=True)
+        source = incoming / "resume.txt"
+        source.write_text("職務経歴", encoding="utf-8")
+
+        result = ingest(incoming, self.vault, self.archive)
+
+        self.assertEqual(len(result.created), 1)
+        self.assertFalse(source.exists())
+        self.assertEqual(len(tuple((self.archive / "originals").iterdir())), 1)
