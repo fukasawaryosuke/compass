@@ -6,6 +6,7 @@ import sys
 
 from compass.config import ConfigError, load_settings
 from compass.ingest import IngestionError, ingest
+from compass.runtime import Run, VaultLockedError
 from compass.validation import validate
 from compass.vault import initialise
 
@@ -46,7 +47,9 @@ def main(argv: list[str] | None = None) -> int:
                 require_archive=True,
             )
             template_root = Path(__file__).resolve().parents[2] / "templates"
-            result = initialise(settings.vault, _required_archive(settings.archive), template_root)
+            with Run("init") as run:
+                result = initialise(settings.vault, _required_archive(settings.archive), template_root)
+                run.add_summary(created=len(result.created), kept=len(result.skipped))
             _print_paths("Created", result.created)
             _print_paths("Kept", result.skipped)
             return 0
@@ -58,7 +61,17 @@ def main(argv: list[str] | None = None) -> int:
                 archive_override=args.archive,
                 require_archive=True,
             )
-            result = ingest(args.source, settings.vault, _required_archive(settings.archive))
+            with Run("ingest") as run:
+                result = ingest(args.source, settings.vault, _required_archive(settings.archive))
+                validation = validate(settings.vault)
+                if validation.errors:
+                    for note in result.created:
+                        note.unlink(missing_ok=True)
+                    raise IngestionError(
+                        "Post-ingestion validation failed; created source notes were rolled back: "
+                        + "; ".join(validation.errors)
+                    )
+                run.add_summary(created=len(result.created), skipped=len(result.skipped))
             _print_paths("Created", result.created)
             _print_paths("Skipped", result.skipped)
             return 0
@@ -73,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
             print("Validation passed")
             return 0
         return 1
-    except (ConfigError, FileNotFoundError, IngestionError, PermissionError) as error:
+    except (ConfigError, FileNotFoundError, IngestionError, PermissionError, VaultLockedError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
 
