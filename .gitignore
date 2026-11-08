@@ -3,3 +3,11 @@
 
 # Per-user machine settings.
 /config/local.*
+
+# Python environments and build output.
+/.venv/
+/build/
+/dist/
+/src/*.egg-info/
+__pycache__/
+*.py[cod]
