@@ -1,0 +1,4 @@
+# Copy this file to config/local.toml and set paths for this machine.
+[paths]
+vault = "/path/to/your/obsidian-vault"
+archive = "/path/to/your/compass-archive"
