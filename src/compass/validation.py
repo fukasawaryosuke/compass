@@ -11,8 +11,19 @@ REQUIRED_FIELDS = {
     "career": {"type", "employer", "employment_type", "period_start", "visibility"},
     "project": {"type", "scope", "visibility"},
     "achievement": {"type", "project", "visibility"},
+    "company": {"type", "labels"},
+    "job": {"type", "company", "position", "status", "source_urls", "retrieved_at"},
+    "scout": {"type", "company", "medium", "status"},
+    "application": {"type", "company", "job", "medium", "position", "status"},
+    "interview": {"type", "company", "application", "stage", "status"},
 }
 VALID_VISIBILITIES = {"internal", "review", "external-safe"}
+VALID_STATUSES = {
+    "job": {"active", "inactive"},
+    "scout": {"new", "considering", "declined", "promoted"},
+    "application": {"pre-application", "applied", "in-progress", "offer", "rejected", "withdrawn"},
+    "interview": {"planned", "completed"},
+}
 WIKILINK_PATTERN = re.compile(r"!?(?:\[\[)([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
 
 
@@ -81,9 +92,13 @@ def _validate_data(relative: Path, data: dict[str, object], errors: list[str]) -
     visibility = data.get("visibility")
     if visibility is not None and visibility not in VALID_VISIBILITIES:
         errors.append(f"{relative}: invalid visibility: {visibility!r}")
-    skills = data.get("skills")
-    if skills is not None and not isinstance(skills, list):
-        errors.append(f"{relative}: skills must be a list")
+    valid_statuses = VALID_STATUSES.get(note_type)
+    if valid_statuses and data.get("status") not in valid_statuses:
+        errors.append(f"{relative}: invalid {note_type} status: {data.get('status')!r}")
+    for property_name in ("industry", "labels", "research_sources", "skills", "source_refs", "source_urls"):
+        value = data.get(property_name)
+        if value is not None and not isinstance(value, list):
+            errors.append(f"{relative}: {property_name} must be a list")
 
 
 def _has_value(value: object) -> bool:

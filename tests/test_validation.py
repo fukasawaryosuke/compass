@@ -35,3 +35,17 @@ class ValidationTests(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn("missing required properties: project", result.errors[0])
+
+    def test_reports_invalid_job_status(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory) / "compass"
+            root.mkdir()
+            (root / "job.md").write_text(
+                "---\ntype: job\ncompany: '[[Example]]'\nposition: Backend Engineer\nstatus: closed\nsource_urls: ['https://example.com/jobs/1']\nretrieved_at: '2026-11-08'\n---\n# Job\n",
+                encoding="utf-8",
+            )
+
+            result = validate(root.parent)
+
+            self.assertFalse(result.ok)
+            self.assertIn("invalid job status: 'closed'", result.errors[0])
