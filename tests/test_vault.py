@@ -28,6 +28,7 @@ class InitialiseTests(unittest.TestCase):
                 self.assertTrue((vault / "compass" / "templates" / filename).is_file())
             self.assertTrue((archive / "originals").is_dir())
             self.assertTrue((archive / "exports").is_dir())
+            self.assertTrue((archive / "incoming").is_dir())
             self.assertTrue(validate(vault).ok)
 
             home = vault / "compass" / "Home.md"

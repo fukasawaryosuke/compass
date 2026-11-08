@@ -29,7 +29,12 @@ def build_parser() -> argparse.ArgumentParser:
     validation_parser.add_argument("--vault", type=Path, help="Obsidian Vault root")
 
     ingestion_parser = commands.add_parser("ingest", help="Archive supported files and create source notes")
-    ingestion_parser.add_argument("source", type=Path, help="File or directory to ingest")
+    ingestion_parser.add_argument(
+        "source",
+        type=Path,
+        nargs="?",
+        help="File or directory to ingest (default: archive/incoming)",
+    )
     ingestion_parser.add_argument("--vault", type=Path, help="Obsidian Vault root")
     ingestion_parser.add_argument("--archive", type=Path, help="Local compass archive root")
     return parser
@@ -62,7 +67,8 @@ def main(argv: list[str] | None = None) -> int:
                 require_archive=True,
             )
             with Run("ingest") as run:
-                result = ingest(args.source, settings.vault, _required_archive(settings.archive))
+                archive = _required_archive(settings.archive)
+                result = ingest(args.source or archive / "incoming", settings.vault, archive)
                 validation = validate(settings.vault)
                 if validation.errors:
                     for note in result.created:
