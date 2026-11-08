@@ -22,7 +22,16 @@ DIRECTORIES = (
     "sources",
     "templates",
 )
-TEMPLATE_FILENAMES = ("career.md", "project.md", "achievement.md")
+TEMPLATE_FILENAMES = (
+    "achievement.md",
+    "application.md",
+    "career.md",
+    "company.md",
+    "interview.md",
+    "job.md",
+    "project.md",
+    "scout.md",
+)
 
 
 @dataclass(frozen=True)
