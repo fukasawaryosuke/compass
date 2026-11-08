@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 from compass.config import ConfigError, load_settings
+from compass.ingest import IngestionError, ingest
 from compass.validation import validate
 from compass.vault import initialise
 
@@ -25,6 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     validation_parser = commands.add_parser("validate", help="Validate compass Markdown notes")
     validation_parser.add_argument("--vault", type=Path, help="Obsidian Vault root")
+
+    ingestion_parser = commands.add_parser("ingest", help="Archive supported files and create source notes")
+    ingestion_parser.add_argument("source", type=Path, help="File or directory to ingest")
+    ingestion_parser.add_argument("--vault", type=Path, help="Obsidian Vault root")
+    ingestion_parser.add_argument("--archive", type=Path, help="Local compass archive root")
     return parser
 
 
@@ -45,6 +51,18 @@ def main(argv: list[str] | None = None) -> int:
             _print_paths("Kept", result.skipped)
             return 0
 
+        if args.command == "ingest":
+            settings = load_settings(
+                args.config,
+                vault_override=args.vault,
+                archive_override=args.archive,
+                require_archive=True,
+            )
+            result = ingest(args.source, settings.vault, _required_archive(settings.archive))
+            _print_paths("Created", result.created)
+            _print_paths("Skipped", result.skipped)
+            return 0
+
         settings = load_settings(args.config, vault_override=args.vault)
         result = validate(settings.vault)
         for warning in result.warnings:
@@ -55,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
             print("Validation passed")
             return 0
         return 1
-    except (ConfigError, FileNotFoundError, PermissionError) as error:
+    except (ConfigError, FileNotFoundError, IngestionError, PermissionError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
 
