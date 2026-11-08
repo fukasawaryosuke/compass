@@ -1,0 +1,5 @@
+# Local execution data may contain extracted personal or confidential information.
+/.runtime/
+
+# Per-user machine settings.
+/config/local.*
