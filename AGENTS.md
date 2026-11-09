@@ -1,51 +1,69 @@
-# Codex project instructions
+# Codexプロジェクト指示
 
-## Before making changes
+## 変更前
 
-- Inspect the repository and its existing documentation before choosing tools or conventions.
-- Follow the project's established language, formatting, and architecture choices.
-- If the repository is empty or a decision would materially shape the project, ask the user before introducing a framework or runtime.
+- ツールや規約を選ぶ前に、リポジトリと既存ドキュメントを確認する。
+- プロジェクトで採用済みの言語、書式、アーキテクチャに従う。
+- リポジトリが空、またはフレームワーク・ランタイムの導入がプロジェクトを大きく方向付ける場合は、導入前に利用者へ確認する。
 
-## While working
+## 作業中
 
-- Keep changes focused on the requested task.
-- Explain assumptions when requirements are unclear, and prefer the smallest reasonable implementation.
-- Do not add dependencies, tests, or generated files unless the task needs them or the user asks.
-- Never expose credentials, tokens, or other secrets in output or committed files.
+- 変更は依頼された作業に集中させる。
+- 要件が曖昧な場合は前提を明示し、最小限で妥当な実装を選ぶ。
+- 依頼や作業上の必要がない限り、依存関係、テスト、生成ファイルを追加しない。
+- 認証情報、トークン、その他の秘密情報を出力やコミット対象ファイルへ含めない。
 
-## Before finishing
+## 完了前
 
-- Summarize the files changed and any decisions that need the user's input.
-- Report checks that were run and their results. Do not claim checks passed if they were not run.
+- 変更ファイルと、利用者の判断が必要な点を要約する。
+- 実行した検証と結果を報告する。実行していない検証を成功と報告しない。
 
-## compass agent contract
+## compassエージェント規約
 
-Read `REQUIREMENTS.md` before changing the compass data model, templates, agent workflows, or any code that writes to the Obsidian Vault.
+compassのデータモデル、テンプレート、エージェントワークフロー、またはObsidian Vaultへ書き込むコードを変更する前に、`REQUIREMENTS.md`を読む。
 
-### Boundaries
+### サブエージェント優先の実行
 
-- This repository contains the harness. It must not contain personal career data, job postings, credentials, browser cookies, OCR output, or generated application documents.
-- The managed Vault is configured locally and is not Git-managed. Agents may read and write only its `compass/` directory unless the user explicitly names another note or directory.
-- Local runtime state belongs under `.runtime/` and must stay untracked. Preserve only the minimum data needed for execution logs, caches, locks, and 30-day rollback snapshots.
-- Original documents and exported PDF/Word files live in the local archive, not in the Vault or repository.
+- 調査、抽出、実装、レビュー、検証、または複数の独立した作業を含む依頼は、独立部分を原則としてサブエージェントへ委譲する。
+- 短い事実回答、小さな読み取り確認1件、または委譲しても成果が良くならない密結合の1ステップ作業は、親エージェントが直接処理する。
+- 委譲前に、各サブエージェントの作業範囲と期待する結果を重複しないよう定義する。理由なく同じ調査を複数エージェントに重複依頼しない。
+- Vault、原資料、外部ページ、既存コードを調べるサブエージェントは、原則として読み取り専用にする。親エージェントが結果を統合し、最終判断を行う。
+- 管理対象Vaultへの書き込みは親エージェントだけが行う。親エージェントは単一ライターロックを取得し、書き込みを直列で実施し、検証、実行記録、結果報告まで担当する。
+- 複数のサブエージェントに、同じリポジトリファイルやVaultノートを同時に書き込ませない。独立したコード変更を委譲する場合は、書き込み対象ファイルを分離し、統合前に結果を確認する。
+- 利用者の意図、矛盾の解消、機密性の判断、外部状態の変更が必要な意思決定は委譲しない。この規約により必要な場合は利用者へ質問する。
+- 結果を統合したサブエージェントは閉じる。サブエージェントが実質的に貢献した場合は、最終報告で簡潔に伝える。
 
-### Writing managed data
+### 不足情報のQ&A
 
-- For clear, non-conflicting facts, update the appropriate approved Vault note automatically.
-- Ask the user before deciding between conflicting source facts, filling material gaps, or reusing potentially confidential information.
-- Never delete or substantially rewrite user-authored prose without an explicit request.
-- Do not persist temporary drafts after a successful, validated promotion. Keep unresolved drafts until they are resolved.
-- Validate Frontmatter, Markdown structure, links, and duplicate candidates after each write. Roll back the current operation when a critical validation fails.
+- 利用者が事実を提供する必要がある場合、矛盾解消や希望の選択が必要な場合、または機密の可能性がある情報の利用承認が必要な場合は、簡潔なQ&A形式で質問する。
+- 回答が本当に独立しており、曖昧さなくまとめて答えられる場合を除き、質問は焦点を絞って1問ずつ行う。
+- 回答が影響するノートや判断を示し、有用なら推奨する既定値も提示する。管理対象Vaultに既にある情報は質問しない。
+- 明確で矛盾がなく、安全に自動反映できる事実についてはQ&Aを行わない。
 
-### External services
+### 境界
 
-- Read public web pages when needed for an explicitly requested company or job investigation.
-- A logged-in browser session may be read only when the user requests that operation. Never store or expose credentials, cookies, or MFA codes.
-- Never submit an application, send a message, reply to a scout, schedule a meeting, or otherwise mutate an external service. Produce drafts only when requested.
+- このリポジトリにはハーネスを置く。個人のキャリアデータ、求人情報、認証情報、ブラウザCookie、OCR出力、生成済み応募書類を置かない。
+- 管理対象Vaultはローカル設定され、Git管理しない。利用者が別のノートやディレクトリを明示した場合を除き、エージェントはその`compass/`配下だけを読み書きする。
+- ローカル実行状態は`.runtime/`配下に置き、追跡対象外のままにする。実行ログ、キャッシュ、ロック、30日間のロールバックスナップショットに必要な最小限の情報だけを保存する。
+- 原本資料と出力したPDF／Wordは、Vaultやリポジトリではなくローカルアーカイブに置く。
 
-### Working style
+### 管理対象データの書き込み
 
-- Treat the user's explicit interest or rejection of a company as authoritative over an AI-generated score.
-- Keep company and job research dated and linked to its public source URLs. Do not save complete web-page copies.
-- Report changed Vault notes and unresolved questions concisely after a successful operation.
-- Use a single-writer lock for a Vault operation to avoid iCloud synchronization conflicts.
+- 明確で矛盾しない事実は、承認済みの適切なVaultノートへ自動反映する。
+- 矛盾する情報、重要な欠損、または機密の可能性がある情報の再利用を判断する前に、利用者へ質問する。
+- 明示的な依頼なしに、利用者が書いた文章を削除したり大幅に書き換えたりしない。
+- 検証済みの正式反映に成功した一時下書きは残さない。未解決の下書きは解決まで残す。
+- 各書き込み後にFrontmatter、Markdown構造、リンク、重複候補を検証する。重大な検証失敗時は、その操作をロールバックする。
+
+### 外部サービス
+
+- 利用者が明示的に依頼した企業または求人の調査で必要な場合は、公開Webページを読む。
+- ログイン済みブラウザセッションは、利用者がその操作を依頼した場合だけ読み取れる。認証情報、Cookie、MFAコードは保存・表示しない。
+- 応募、メッセージ送信、スカウト返信、面談予約、その他の外部サービスの状態を変更する操作は絶対に実行しない。依頼された場合も文面案の作成までに留める。
+
+### 作業スタイル
+
+- 利用者が明示した企業への関心・不採用判断は、AIが生成したスコアより優先する。
+- 企業・求人の調査には取得日と公開ソースURLを残す。Webページ本文全体のコピーは保存しない。
+- 作業に成功したら、変更したVaultノートと未解決の質問を簡潔に報告する。
+- iCloud同期の競合を避けるため、Vault操作には単一ライターロックを使用する。
