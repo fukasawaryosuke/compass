@@ -25,6 +25,7 @@ class Run:
     )
     _started_at: datetime | None = field(default=None, init=False)
     _summary: dict[str, int] = field(default_factory=dict, init=False)
+    _details: dict[str, object] = field(default_factory=dict, init=False)
     _lock_path: Path = field(init=False)
 
     def __post_init__(self) -> None:
@@ -48,6 +49,10 @@ class Run:
         for key, value in counts.items():
             self._summary[key] = self._summary.get(key, 0) + value
 
+    def add_details(self, **details: object) -> None:
+        """Store minimal operation metadata in the local, untracked run record."""
+        self._details.update(details)
+
     def __exit__(self, exception_type: object, exception: object, traceback: object) -> None:
         finished_at = datetime.now(UTC)
         status = "failed" if exception_type else "succeeded"
@@ -58,6 +63,7 @@ class Run:
             "started_at": self._started_at.isoformat() if self._started_at else None,
             "finished_at": finished_at.isoformat(),
             "summary": self._summary,
+            **self._details,
         }
         (self.runtime_root / "runs" / f"{self.run_id}.json").write_text(
             json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

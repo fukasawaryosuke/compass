@@ -37,3 +37,35 @@ python -m compass init
 ```sh
 python -m compass ingest
 ```
+
+## 企業情報の取得と定期更新
+
+公開企業ページは、企業名とURLを指定して取得します。取得日・URL・要約だけを企業ノートへ記録し、ページ本文全体は保存しません。
+
+```sh
+python -m compass research-company "株式会社DONUTS" https://www.donuts.ne.jp/
+python -m compass refresh-companies
+```
+
+定期実行はOSのスケジューラから`refresh-companies`を呼び出します。macOS向けのLaunchAgent定義は次で生成できます（例は毎日8時）。生成後、内容を確認してから`~/Library/LaunchAgents/`へ配置・読み込みしてください。ログイン済み媒体は対象にせず、公開URLだけを更新します。
+
+```sh
+python -m compass schedule-company-refresh \
+  --output ~/Library/LaunchAgents/local.compass.company-refresh.plist \
+  --hour 8
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.compass.company-refresh.plist
+```
+
+生成される定義は次のようなProgramArgumentsを持ちます。
+
+```xml
+<key>ProgramArguments</key>
+<array>
+  <string>/absolute/path/to/.venv/bin/python</string>
+  <string>-m</string>
+  <string>compass</string>
+  <string>--config</string>
+  <string>/absolute/path/to/config/local.toml</string>
+  <string>refresh-companies</string>
+</array>
+```
