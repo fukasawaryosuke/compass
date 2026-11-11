@@ -5,10 +5,7 @@ import tempfile
 import unittest
 
 from compass.validation import validate
-from compass.vault import DIRECTORIES, TEMPLATE_FILENAMES, initialise
-
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+from compass.vault import DIRECTORIES, initialise
 
 
 class InitialiseTests(unittest.TestCase):
@@ -17,15 +14,11 @@ class InitialiseTests(unittest.TestCase):
             root = Path(temporary_directory)
             vault = root / "vault"
             archive = root / "archive"
-            templates = PROJECT_ROOT / "templates"
-
-            first = initialise(vault, archive, templates)
+            first = initialise(vault, archive)
 
             self.assertTrue(first.created)
             for directory in DIRECTORIES:
                 self.assertTrue((vault / "compass" / directory).is_dir())
-            for filename in TEMPLATE_FILENAMES:
-                self.assertTrue((vault / "compass" / "templates" / filename).is_file())
             self.assertTrue((archive / "originals").is_dir())
             self.assertTrue((archive / "exports").is_dir())
             self.assertTrue((archive / "incoming").is_dir())
@@ -33,7 +26,7 @@ class InitialiseTests(unittest.TestCase):
 
             home = vault / "compass" / "Home.md"
             home.write_text("# User edited home\n", encoding="utf-8")
-            second = initialise(vault, archive, templates)
+            second = initialise(vault, archive)
 
             self.assertIn(home, second.skipped)
             self.assertEqual(home.read_text(encoding="utf-8"), "# User edited home\n")
