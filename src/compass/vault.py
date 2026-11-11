@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import shutil
 
 
 MANAGED_DIRECTORY = "compass"
@@ -20,17 +19,6 @@ DIRECTORIES = (
     "job-search/scouts",
     "job-search/exclusions",
     "sources",
-    "templates",
-)
-TEMPLATE_FILENAMES = (
-    "achievement.md",
-    "application.md",
-    "career.md",
-    "company.md",
-    "interview.md",
-    "job.md",
-    "project.md",
-    "scout.md",
 )
 
 
@@ -40,7 +28,7 @@ class InitResult:
     skipped: tuple[Path, ...]
 
 
-def initialise(vault: Path, archive: Path, template_root: Path) -> InitResult:
+def initialise(vault: Path, archive: Path) -> InitResult:
     """Create the managed Vault and archive layout without overwriting user files."""
     managed_root = vault / MANAGED_DIRECTORY
     created: list[Path] = []
@@ -64,17 +52,6 @@ def initialise(vault: Path, archive: Path, template_root: Path) -> InitResult:
 
     home = managed_root / "Home.md"
     _write_if_missing(home, home_content(), created, skipped)
-
-    for filename in TEMPLATE_FILENAMES:
-        source = template_root / filename
-        if not source.is_file():
-            raise FileNotFoundError(f"Template is missing from repository: {source}")
-        destination = managed_root / "templates" / filename
-        if destination.exists():
-            skipped.append(destination)
-        else:
-            shutil.copyfile(source, destination)
-            created.append(destination)
 
     return InitResult(tuple(created), tuple(skipped))
 

@@ -67,9 +67,8 @@ def main(argv: list[str] | None = None) -> int:
                 archive_override=args.archive,
                 require_archive=True,
             )
-            template_root = Path(__file__).resolve().parents[2] / "templates"
             with Run("init") as run:
-                result = initialise(settings.vault, _required_archive(settings.archive), template_root)
+                result = initialise(settings.vault, _required_archive(settings.archive))
                 run.add_summary(created=len(result.created), kept=len(result.skipped))
             _print_paths("Created", result.created)
             _print_paths("Kept", result.skipped)

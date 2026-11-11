@@ -18,7 +18,7 @@ class IngestionTests(unittest.TestCase):
         self.root = Path(self.temporary_directory.name)
         self.vault = self.root / "vault"
         self.archive = self.root / "archive"
-        initialise(self.vault, self.archive, PROJECT_ROOT / "templates")
+        initialise(self.vault, self.archive)
 
     def tearDown(self) -> None:
         self.temporary_directory.cleanup()
