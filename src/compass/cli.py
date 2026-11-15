@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import plistlib
 import sys
@@ -13,6 +14,7 @@ from compass.company_research import (
     rollback_results,
 )
 from compass.ingest import IngestionError, ingest
+from compass.job_preview import JobPreviewError, preview_local_job
 from compass.runtime import Run, VaultLockedError
 from compass.validation import validate
 from compass.vault import initialise
@@ -53,6 +55,8 @@ def build_parser() -> argparse.ArgumentParser:
     schedule_parser = commands.add_parser("schedule-company-refresh", help="Write a macOS launchd plist for company refresh")
     schedule_parser.add_argument("--output", type=Path, required=True, help="Destination plist path")
     schedule_parser.add_argument("--hour", type=int, default=8, choices=range(24), help="Local execution hour (default: 8)")
+    preview_parser = commands.add_parser("preview-local-job", help="Preview fields from a local HTML fixture without network access")
+    preview_parser.add_argument("source", type=Path, help="Local HTML file")
     return parser
 
 
@@ -60,6 +64,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.command == "preview-local-job":
+            print(json.dumps(preview_local_job(args.source), ensure_ascii=False, indent=2))
+            return 0
         if args.command == "init":
             settings = load_settings(
                 args.config,
@@ -165,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
             print("Validation passed")
             return 0
         return 1
-    except (ConfigError, FileNotFoundError, IngestionError, CompanyResearchError, PermissionError, VaultLockedError) as error:
+    except (ConfigError, FileNotFoundError, IngestionError, CompanyResearchError, JobPreviewError, PermissionError, VaultLockedError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
 

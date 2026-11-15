@@ -43,6 +43,8 @@ python -m compass ingest
 
 公開企業ページは、企業名とURLを指定して取得します。取得日・URL・要約だけを企業ノートへ記録し、ページ本文全体は保存しません。
 
+求人取得向けのPlaywright試作は、ダミーのローカルHTMLに限定しています。セットアップは `pip install -e '.[browser]'` と `python -m playwright install chromium`、実行は `python -m compass preview-local-job /path/to/example.html` です。Offersの利用規約は自動データ抽出を禁止しているため、Offersへの自動取得は行いません。詳細は[設計書](docs/authenticated-job-collection-design.md)を参照してください。
+
 ```sh
 python -m compass research-company "株式会社DONUTS" https://www.donuts.ne.jp/
 python -m compass refresh-companies
