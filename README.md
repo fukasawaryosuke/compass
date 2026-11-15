@@ -11,6 +11,7 @@ compass本体はGit管理し、職歴・求人・企業研究・面接対策な�
 ## ドキュメント
 
 - [要件定義書](REQUIREMENTS.md)
+- [認証済み求人媒体の定期取得設計](docs/authenticated-job-collection-design.md)
 
 ## 管理領域
 
